@@ -799,7 +799,7 @@ export default function Home() {
       const columns = row.split('|').map(col => col.trim()).filter(col => col.length > 0);
       
       if (columns.length >= 5) {
-        const [name, brand, inputAI, productLink, imageLink] = columns;
+        const [name, brand, productLink, inputAI, imageLink] = columns;
         
         // Extract price from inputAI text
         const priceMatch = inputAI.match(/Price:\s*(£[0-9.]+\s*-\s*£?[0-9.]+|£[0-9.]+)/);
@@ -875,7 +875,7 @@ export default function Home() {
 
   // Get system prompt with product data
   function getSystemPrompt(products) {
-    let prompt = "You are a shopping assistant AI specializing in footwear recommendations. Your task is to recommend products based on user queries. You have access to a catalog of shoes and footwear products. Below is the product catalog you can recommend from:\n\n";
+    let prompt = "You are a shopping assistant AI specializing in lamp recommendations. Your task is to recommend products based on user queries. You have access to a catalog of shoes and footwear products. Below is the product catalog you can recommend from:\n\n";
     
     products.forEach((product, index) => {
       prompt += `Product ${index + 1} (ID: ${product.id}):\n`;

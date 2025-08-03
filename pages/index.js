@@ -829,12 +829,12 @@ export default function Home() {
       // Split the row by pipe character
       const columns = row.split('|').map(col => col.trim()).filter(col => col.length > 0);
       
-      if (columns.length >= 5) {
-        const [name, brand, productLink, inputAI, imageLink] = columns;
+      if (columns.length >= 6) {
+        const [name, brand, productLink, price, inputAI, imageLink] = columns;
         
         // Extract price from inputAI text
-        const priceMatch = inputAI.match(/Price:\s*(£[0-9.]+\s*-\s*£?[0-9.]+|£[0-9.]+)/);
-        const price = priceMatch ? priceMatch[1] : '';
+        //const priceMatch = inputAI.match(/Price:\s*(£[0-9.]+\s*-\s*£?[0-9.]+|£[0-9.]+)/);
+        //const price = priceMatch ? priceMatch[1] : '';
         
         // Extract description from inputAI text
         const aboutMatch = inputAI.match(/About this item(.*?)(?:Product description|Product details|$)/s);

@@ -32,11 +32,13 @@ function ChatProvider({ children, initialMessages = [], productsData = [], initi
 
   // 添加设备检测状态
   const [isAndroid, setIsAndroid] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
   
   // 检测设备类型
   useEffect(() => {
     const userAgent = navigator.userAgent.toLowerCase();
     setIsAndroid(/android/.test(userAgent));
+    setIsIOS(/ipad|iphone|ipod/.test(userAgent) && !window.MSStream);
   }, []);
 
   // Initialize chat history with system prompt when it becomes available
@@ -48,7 +50,21 @@ function ChatProvider({ children, initialMessages = [], productsData = [], initi
 
   // Auto-scroll to bottom of chat
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // 检查最新消息
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      
+      // 只在以下情况滚动：
+      // 1. 用户发送消息时
+      // 2. 显示加载状态时
+      // 3. 显示错误消息时
+      if (lastMessage.role === 'user' || 
+          lastMessage.content.includes('系统正在准备中') ||
+          lastMessage.content.includes('Sorry, I encountered an error')) {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }
+      // AI回复产品推荐时不自动滚动
+    }
   }, [messages]);
 
   // Format messages for Claude API
@@ -312,6 +328,7 @@ function ChatProvider({ children, initialMessages = [], productsData = [], initi
     apiStats,
     messagesEndRef,
     isAndroid,  // 添加设备信息到context
+    isIOS,      // 添加iOS设备信息到context
     currentApiType // 添加当前API类型到context
   };
 
@@ -323,7 +340,7 @@ const imageCache = new Map();
 
 // Create a ProductCard component before the main component
 // This ensures it's only defined once and doesn't get redefined on each render
-const ProductCard = React.memo(({ product, isAndroid }) => {
+const ProductCard = React.memo(({ product, isAndroid, isIOS }) => {
   // Get the cached image URL or create a new one
   if (!imageCache.has(product.id)) {
     imageCache.set(product.id, product.imageLink);
@@ -334,15 +351,28 @@ const ProductCard = React.memo(({ product, isAndroid }) => {
     let productLink = product.productLink;
     
     // 对Android设备添加特殊参数以便跳转到Amazon应用
-    if (isAndroid && productLink.includes('amazon.co.uk')) {
-      // 如果链接中已经有查询参数
-      if (productLink.includes('?')) {
-        productLink += '&psc=1&openapp=1';
-      } else {
-        productLink += '?psc=1&openapp=1';
+    if (isAndroid && productLink.includes('amazon')) {
+      // 提取域名后的路径
+      const urlParts = productLink.split('amazon.co.uk');
+      if (urlParts.length > 1) {
+        const path = urlParts[1];
+        // 使用Android Intent，添加更多参数提高成功率
+        const intentLink = `intent://www.amazon.co.uk${path}#Intent;scheme=https;package=com.amazon.mShop.android.shopping;S.browser_fallback_url=${encodeURIComponent(productLink)};end`;
+        
+        // 直接设置location而不是新窗口
+        window.location.href = intentLink;
+        return;
       }
     }
     
+    // iOS设备处理 - 避免空白页
+    if (isIOS) {
+      // iOS直接在当前窗口打开，避免空白页
+      window.location.href = productLink;
+      return;
+    }
+    
+    // 其他设备在新标签页打开
     window.open(productLink, '_blank');
   };
 
@@ -440,7 +470,7 @@ const ProductCard = React.memo(({ product, isAndroid }) => {
 
 // Product recommendation component
 const ProductRecommendation = React.memo(({ products }) => {
-  const { isAndroid } = React.useContext(ChatContext);
+  const { isAndroid, isIOS } = React.useContext(ChatContext);
   
   if (!products || products.length === 0) return null;
   
@@ -452,6 +482,7 @@ const ProductRecommendation = React.memo(({ products }) => {
             key={`product-${product.id}`} 
             product={product} 
             isAndroid={isAndroid}
+            isIOS={isIOS}
           />
         ))}
       </div>
@@ -900,7 +931,8 @@ export default function Home() {
     prompt += "   where PRODUCT_ID is the ID of the product (e.g., product_1, product_2, etc.).\n";
     prompt += "6. Always recommend exactly 5 products in each response. If there are fewer relevant products, include other similar ones to reach 5 total recommendations.\n";
     prompt += "7. If you cannot find a suitable product, suggest what information the user could provide to help you find better matches.\n";
-    
+    prompt += "8. When presenting the recommendations, always order them by price from lowest to highest, making budget-friendly options more prominent.\n";
+  
     return prompt;
   }
 

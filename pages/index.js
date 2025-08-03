@@ -931,7 +931,7 @@ export default function Home() {
     prompt += "   where PRODUCT_ID is the ID of the product (e.g., product_1, product_2, etc.).\n";
     prompt += "6. Always recommend exactly 5 products in each response. If there are fewer relevant products, include other similar ones to reach 5 total recommendations.\n";
     prompt += "7. If you cannot find a suitable product, suggest what information the user could provide to help you find better matches.\n";
-    prompt += "8. When presenting the recommendations, always order them by price from lowest to highest, making budget-friendly options more prominent.\n";
+    prompt += "8. When presenting the recommendations, always order them by price from high to low, making budget-friendly options more prominent.\n";
   
     return prompt;
   }
